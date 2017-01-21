@@ -1,0 +1,10 @@
+{
+  "apiPackage" : "org.mohme.esj.api",
+  "dateLibrary" : "java8",
+  "hideGenerationTimestamp" : true,
+  "interfaceOnly" : true,
+  "java8" : true,
+  "library" : "spring-boot",
+  "modelPackage" : "org.mohme.esj.model",
+  "sourceFolder" : "../../src/generated/java"
+}

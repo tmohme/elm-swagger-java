@@ -1,0 +1,91 @@
+import groovy.json.JsonSlurper
+
+plugins {
+  id 'java'
+  id 'org.springframework.boot' version '1.4.3.RELEASE'
+  id "org.hidetake.swagger.generator" version "2.4.0"
+
+  id "com.dorongold.task-tree" version "1.2.2" // taskTree
+}
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  // Add dependency for Swagger Codegen CLI
+  swaggerCodegen 'io.swagger:swagger-codegen-cli:2.2.1'
+}
+
+ext.swagger = [
+  inputFile: file('api.swagger.yml'),
+  configFile: file('swagger-config.json')
+        ]
+// derived values
+ext.swagger.config = (new JsonSlurper()).parse(ext.swagger.configFile)
+ext.swagger.outputDir = "${project.buildDir}/${ext.swagger.config.sourceFolder}"
+
+
+sourceSets {
+  generated {
+    java.srcDir file(swagger.outputDir)
+  }
+
+  main {
+    java {
+      compileClasspath += sourceSets.generated.output
+    }
+  }
+}
+
+clean {
+  delete (sourceSets.generated.allSource)
+}
+
+validateSwagger {
+  inputFile = swagger.inputFile
+}
+
+generateSwaggerCode {
+  language = 'spring'
+  inputFile = swagger.inputFile
+  configFile = swagger.configFile
+  components = ['models', 'apis']
+
+  inputs.files(inputFile, configFile)
+  outputs.dir(outputDir)
+}
+
+compileGeneratedJava {
+  inputs.files(generateSwaggerCode.outputs)
+}
+
+compileJava {
+  inputs.files(compileGeneratedJava.outputs)
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+configurations {
+  compile {
+    extendsFrom generatedCompile
+  }
+}
+
+jar {
+  from sourceSets.generated.output
+}
+
+dependencies {
+  generatedCompile 'org.springframework.boot:spring-boot-starter-web'
+  generatedCompile 'io.swagger:swagger-annotations:1.5.12'
+
+  compile 'org.springframework.boot:spring-boot-starter-web'
+
+  testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+bootRepackage {
+  mainClass = 'org.mohme.esj.Application'
+}
