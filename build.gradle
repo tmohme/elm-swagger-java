@@ -89,3 +89,52 @@ dependencies {
 bootRepackage {
   mainClass = 'org.mohme.esj.Application'
 }
+
+task elmMake(type: ElmMake) {
+  sourceDir = 'src/main/elm'
+  debug = false
+
+  inputs.dir(sourceDir)
+}
+jar.dependsOn elmMake
+
+
+class ElmMake extends DefaultTask {
+  private final String elm_make  =   "elm-make";
+
+  @Input sourceDir = 'src/main/elm'
+  @Input buildDir = "${project.buildDir}/elm"
+  @Input mainModule = 'Main.elm'
+  @Input targetModule = 'elm.js'
+  @Input debug = true
+
+  @TaskAction
+  def build(){
+    createBuildDirectory(buildDir);
+    String[] elm_make_cmd = [elm_make, "${sourceDir}/${mainModule}", "--output", "${buildDir}/${targetModule}" ]
+    if (debug) {
+      elm_make_cmd += '--debug'
+    };
+    buildElmProject(elm_make_cmd)
+  }
+
+  def createBuildDirectory(String build_dir){
+    if(! new File(build_dir).exists())
+      new File(build_dir).mkdirs()
+  }
+
+  def buildElmProject(String[] make_cmd){
+    logger.quiet "executing ${make_cmd}"
+    ProcessBuilder pBuilder = new ProcessBuilder(make_cmd);
+    pBuilder.redirectErrorStream(true);
+    Process process = pBuilder.start();
+
+    def line;
+    def reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+    while ((line = reader.readLine()) != null) {
+      logger.info line
+    }
+  }
+
+}
